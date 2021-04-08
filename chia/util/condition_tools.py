@@ -108,7 +108,7 @@ def created_outputs_for_conditions_dict(
     return output_coins
 
 
-def created_announcements_for_conditions_dict(
+def coin_announcements_for_conditions_dict(
     conditions_dict: Dict[ConditionOpcode, List[ConditionVarPair]],
     input_coin: Coin,
 ) -> List[Announcement]:
@@ -117,6 +117,14 @@ def created_announcements_for_conditions_dict(
         message = cvp.vars[0]
         announcement = Announcement(input_coin.name(), message)
         output_announcements.append(announcement)
+    return output_announcements
+
+
+def puzzle_announcements_for_conditions_dict(
+    conditions_dict: Dict[ConditionOpcode, List[ConditionVarPair]],
+    input_coin: Coin,
+) -> List[Announcement]:
+    output_announcements = []
     for cvp in conditions_dict.get(ConditionOpcode.CREATE_ANNOUNCEMENT_WITH_PUZZLEHASH, []):
         message = cvp.vars[0]
         announcement = Announcement(input_coin.puzzle_hash, message)
@@ -124,7 +132,7 @@ def created_announcements_for_conditions_dict(
     return output_announcements
 
 
-def announcements_names_for_npc(npc_list) -> List[bytes32]:
+def coin_announcements_names_for_npc(npc_list) -> List[bytes32]:
     output_announcements = []
     for npc in npc_list:
         for condition, cvp_list in npc.conditions:
@@ -133,6 +141,12 @@ def announcements_names_for_npc(npc_list) -> List[bytes32]:
                     message = cvp.vars[0]
                     announcement = Announcement(npc.coin_name, message)
                     output_announcements.append(announcement.name())
+    return output_announcements
+
+
+def puzzle_announcements_names_for_npc(npc_list) -> List[bytes32]:
+    output_announcements = []
+    for npc in npc_list:
         for condition, cvp_list in npc.conditions:
             if condition == ConditionOpcode.CREATE_ANNOUNCEMENT_WITH_PUZZLEHASH:
                 for cvp in cvp_list:
@@ -142,11 +156,19 @@ def announcements_names_for_npc(npc_list) -> List[bytes32]:
     return output_announcements
 
 
-def created_announcement_names_for_conditions_dict(
+def coin_announcement_names_for_conditions_dict(
     conditions_dict: Dict[ConditionOpcode, List[ConditionVarPair]],
     input_coin: Coin,
 ) -> List[bytes32]:
-    output = [an.name() for an in created_announcements_for_conditions_dict(conditions_dict, input_coin)]
+    output = [an.name() for an in coin_announcements_for_conditions_dict(conditions_dict, input_coin)]
+    return output
+
+
+def puzzle_announcement_names_for_conditions_dict(
+    conditions_dict: Dict[ConditionOpcode, List[ConditionVarPair]],
+    input_coin: Coin,
+) -> List[bytes32]:
+    output = [an.name() for an in puzzle_announcements_for_conditions_dict(conditions_dict, input_coin)]
     return output
 
 
