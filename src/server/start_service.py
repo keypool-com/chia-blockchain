@@ -41,7 +41,7 @@ class Service:
         on_connect_callback: Optional[Callable] = None,
         rpc_info: Optional[Tuple[type, int]] = None,
         parse_cli_args=True,
-        connect_to_daemon=True,
+        connect_to_daemon=False,
     ):
         self.root_path = root_path
         self.config = load_config(root_path, "config.yaml")
