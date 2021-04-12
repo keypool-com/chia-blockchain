@@ -9,8 +9,6 @@ from src.util.path import mkdir, path_from_root
 
 
 def initialize_logging(service_name: str, logging_config: Dict, root_path: Path):
-    log_path = path_from_root(root_path, logging_config.get("log_filename", "log/debug.log"))
-    mkdir(str(log_path.parent))
     file_name_length = 33 - len(service_name)
 
     handler = colorlog.StreamHandler()
