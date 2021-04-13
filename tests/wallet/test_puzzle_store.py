@@ -6,10 +6,11 @@ import aiosqlite
 import pytest
 from blspy import AugSchemeMPL
 
-from src.util.ints import uint32
-from src.wallet.derivation_record import DerivationRecord
-from src.wallet.util.wallet_types import WalletType
-from src.wallet.wallet_puzzle_store import WalletPuzzleStore
+from chia.util.db_wrapper import DBWrapper
+from chia.util.ints import uint32
+from chia.wallet.derivation_record import DerivationRecord
+from chia.wallet.util.wallet_types import WalletType
+from chia.wallet.wallet_puzzle_store import WalletPuzzleStore
 
 
 @pytest.fixture(scope="module")
@@ -27,7 +28,8 @@ class TestPuzzleStore:
             db_filename.unlink()
 
         con = await aiosqlite.connect(db_filename)
-        db = await WalletPuzzleStore.create(con)
+        wrapper = DBWrapper(con)
+        db = await WalletPuzzleStore.create(wrapper)
         try:
             derivation_recs = []
             # wallet_types = [t for t in WalletType]

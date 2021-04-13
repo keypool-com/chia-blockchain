@@ -5,16 +5,17 @@ from typing import List, Optional, Set, Tuple
 import aiosqlite
 import pytest
 
-from src.consensus.block_rewards import calculate_base_farmer_reward, calculate_pool_reward
-from src.consensus.blockchain import Blockchain, ReceiveBlockResult
-from src.consensus.coinbase import create_farmer_coin, create_pool_coin
-from src.full_node.block_store import BlockStore
-from src.full_node.coin_store import CoinStore
-from src.types.blockchain_format.coin import Coin
-from src.types.coin_record import CoinRecord
-from src.types.full_block import FullBlock
-from src.util.ints import uint64
-from src.util.wallet_tools import WalletTool
+from chia.consensus.block_rewards import calculate_base_farmer_reward, calculate_pool_reward
+from chia.consensus.blockchain import Blockchain, ReceiveBlockResult
+from chia.consensus.coinbase import create_farmer_coin, create_pool_coin
+from chia.full_node.block_store import BlockStore
+from chia.full_node.coin_store import CoinStore
+from chia.types.blockchain_format.coin import Coin
+from chia.types.coin_record import CoinRecord
+from chia.types.full_block import FullBlock
+from chia.util.db_wrapper import DBWrapper
+from chia.util.ints import uint64
+from chia.util.wallet_tools import WalletTool
 from tests.setup_nodes import bt, test_constants
 
 WALLET_A = WalletTool()
@@ -74,7 +75,8 @@ class TestCoinStore:
         if db_path.exists():
             db_path.unlink()
         connection = await aiosqlite.connect(db_path)
-        coin_store = await CoinStore.create(connection)
+        db_wrapper = DBWrapper(connection)
+        coin_store = await CoinStore.create(db_wrapper)
 
         blocks = bt.get_consecutive_blocks(
             10,
@@ -128,7 +130,8 @@ class TestCoinStore:
         if db_path.exists():
             db_path.unlink()
         connection = await aiosqlite.connect(db_path)
-        coin_store = await CoinStore.create(connection)
+        db_wrapper = DBWrapper(connection)
+        coin_store = await CoinStore.create(db_wrapper)
 
         # Save/get block
         for block in blocks:
@@ -156,7 +159,8 @@ class TestCoinStore:
         if db_path.exists():
             db_path.unlink()
         connection = await aiosqlite.connect(db_path)
-        coin_store = await CoinStore.create(connection)
+        db_wrapper = DBWrapper(connection)
+        coin_store = await CoinStore.create(db_wrapper)
 
         for block in blocks:
             if block.is_transaction_block():
@@ -200,8 +204,9 @@ class TestCoinStore:
         if db_path.exists():
             db_path.unlink()
         connection = await aiosqlite.connect(db_path)
-        coin_store = await CoinStore.create(connection)
-        store = await BlockStore.create(connection)
+        db_wrapper = DBWrapper(connection)
+        coin_store = await CoinStore.create(db_wrapper)
+        store = await BlockStore.create(db_wrapper)
         b: Blockchain = await Blockchain.create(coin_store, store, test_constants)
         try:
 
@@ -267,8 +272,9 @@ class TestCoinStore:
         if db_path.exists():
             db_path.unlink()
         connection = await aiosqlite.connect(db_path)
-        coin_store = await CoinStore.create(connection)
-        store = await BlockStore.create(connection)
+        db_wrapper = DBWrapper(connection)
+        coin_store = await CoinStore.create(db_wrapper)
+        store = await BlockStore.create(db_wrapper)
         b: Blockchain = await Blockchain.create(coin_store, store, test_constants)
         for block in blocks:
             res, err, _ = await b.receive_block(block)

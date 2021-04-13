@@ -5,15 +5,15 @@ import logging
 import pytest
 from aiohttp import ClientSession, ClientTimeout, ServerDisconnectedError, WSCloseCode, WSMessage, WSMsgType
 
-from src.full_node.full_node_api import FullNodeAPI
-from src.protocols import full_node_protocol
-from src.protocols.protocol_message_types import ProtocolMessageTypes
-from src.server.outbound_message import make_msg
-from src.server.rate_limits import RateLimiter
-from src.server.server import ssl_context_for_client
-from src.server.ws_connection import WSChiaConnection
-from src.types.peer_info import PeerInfo
-from src.util.ints import uint16, uint64
+from chia.full_node.full_node_api import FullNodeAPI
+from chia.protocols import full_node_protocol
+from chia.protocols.protocol_message_types import ProtocolMessageTypes
+from chia.server.outbound_message import make_msg
+from chia.server.rate_limits import RateLimiter
+from chia.server.server import ssl_context_for_client
+from chia.server.ws_connection import WSChiaConnection
+from chia.types.peer_info import PeerInfo
+from chia.util.ints import uint16, uint64
 from tests.setup_nodes import self_hostname, setup_simulators_and_wallets
 from tests.time_out_assert import time_out_assert
 
@@ -179,21 +179,21 @@ class TestDos:
         # Remove outbound rate limiter to test inbound limits
         ws_con.outbound_rate_limiter = RateLimiter(percentage_of_limit=10000)
 
-        for i in range(6000):
+        for i in range(10000):
             await ws_con._send_message(new_tx_message)
         await asyncio.sleep(1)
 
         def is_closed():
             return ws_con.closed
 
-        await time_out_assert(15, is_closed)
+        await time_out_assert(30, is_closed)
 
         assert ws_con.closed
 
         def is_banned():
             return "1.2.3.4" in server_2.banned_peers
 
-        await time_out_assert(15, is_banned)
+        await time_out_assert(30, is_banned)
 
     @pytest.mark.asyncio
     async def test_spam_message_non_tx(self, setup_two_nodes):

@@ -35,11 +35,34 @@ mkdir dist
 
 echo "Create executables with pyinstaller"
 pip install pyinstaller==4.2
-pyinstaller --log-level=INFO daemon.spec
+SPEC_FILE=$(python -c 'import chia; print(chia.PYINSTALLER_SPEC_PATH)')
+pyinstaller --log-level=INFO "$SPEC_FILE"
+LAST_EXIT_CODE=$?
+if [ "$LAST_EXIT_CODE" -ne 0 ]; then
+	echo >&2 "pyinstaller failed!"
+	exit $LAST_EXIT_CODE
+fi
+
 cp -r dist/daemon ../chia-blockchain-gui
 cd .. || exit
 cd chia-blockchain-gui || exit
 
+# See https://github.com/imagemin/gifsicle-bin/issues/113
+echo ""
+echo "PLATFORM is $PLATFORM"
+echo ""
+if [ "$PLATFORM" = "arm64" ]; then
+  echo "Installing dh-autoreconf to work around gifsicle issue."
+  apt-get install -y dh-autoreconf cmake autoconf automake libtool nasm pkg-config libpng-dev optipng
+  echo "npm install imagemin-mozjpeg"
+  export CPPFLAGS="-DPNG_ARM_NEON_OPT=0"
+  npm install imagemin-mozjpeg
+  echo "npm install imagemin-gifsicle"
+  npm install imagemin-gifsicle
+  npm rebuild
+fi
+
+echo ""
 echo "npm build"
 npm install
 npm audit fix
