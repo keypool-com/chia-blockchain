@@ -9,34 +9,21 @@ from chia.util.path import mkdir, path_from_root
 
 
 def initialize_logging(service_name: str, logging_config: Dict, root_path: Path):
-    log_path = path_from_root(root_path, logging_config.get("log_filename", "log/debug.log"))
+    file_name_length = 33 - len(service_name)
     log_date_format = "%Y-%m-%dT%H:%M:%S"
 
-    mkdir(str(log_path.parent))
-    file_name_length = 33 - len(service_name)
-    if logging_config["log_stdout"]:
-        handler = colorlog.StreamHandler()
-        handler.setFormatter(
-            colorlog.ColoredFormatter(
-                f"%(asctime)s.%(msecs)03d {service_name} %(name)-{file_name_length}s: "
-                f"%(log_color)s%(levelname)-8s%(reset)s %(message)s",
-                datefmt=log_date_format,
-                reset=True,
-            )
+    handler = colorlog.StreamHandler()
+    handler.setFormatter(
+        colorlog.ColoredFormatter(
+            f"%(asctime)s.%(msecs)03d {service_name} %(name)-{file_name_length}s: "
+            f"%(log_color)s%(levelname)-8s%(reset)s %(message)s",
+            datefmt=log_date_format,
+            reset=True,
         )
+    )
 
-        logger = colorlog.getLogger()
-        logger.addHandler(handler)
-    else:
-        logger = logging.getLogger()
-        handler = ConcurrentRotatingFileHandler(log_path, "a", maxBytes=20 * 1024 * 1024, backupCount=7)
-        handler.setFormatter(
-            logging.Formatter(
-                fmt=f"%(asctime)s.%(msecs)03d {service_name} %(name)-{file_name_length}s: %(levelname)-8s %(message)s",
-                datefmt=log_date_format,
-            )
-        )
-        logger.addHandler(handler)
+    logger = colorlog.getLogger()
+    logger.addHandler(handler)
 
     if "log_level" in logging_config:
         if logging_config["log_level"] == "CRITICAL":
