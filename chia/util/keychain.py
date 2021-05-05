@@ -57,8 +57,8 @@ def bytes_to_mnemonic(mnemonic_bytes: bytes):
         start = i * 11
         end = start + 11
         bits = bitarray[start:end]
-        m_word_poition = bits.uint
-        m_word = word_list[m_word_poition]
+        m_word_position = bits.uint
+        m_word = word_list[m_word_position]
         mnemonics.append(m_word)
 
     return " ".join(mnemonics)
@@ -135,7 +135,7 @@ class Keychain:
 
     def _get_pk_and_entropy(self, user: str) -> Optional[Tuple[G1Element, bytes]]:
         """
-        Returns the keychain conntents for a specific 'user' (key index). The contents
+        Returns the keychain contents for a specific 'user' (key index). The contents
         include an G1Element and the entropy required to generate the private key.
         Note that generating the actual private key also requires the passphrase.
         """

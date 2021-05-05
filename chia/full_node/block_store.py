@@ -19,6 +19,7 @@ class BlockStore:
     db: aiosqlite.Connection
     block_cache: LRUCache
     db_wrapper: DBWrapper
+    ses_challenge_cache: LRUCache
 
     @classmethod
     async def create(cls, db_wrapper: DBWrapper):
@@ -62,6 +63,7 @@ class BlockStore:
 
         await self.db.commit()
         self.block_cache = LRUCache(1000)
+        self.ses_challenge_cache = LRUCache(50)
         return self
 
     async def add_full_block(self, block: FullBlock, block_record: BlockRecord) -> None:
@@ -69,7 +71,7 @@ class BlockStore:
         if cached is not None:
             # Since write to db can fail, we remove from cache here to avoid potential inconsistency
             # Adding to cache only from reading
-            self.block_cache.put(block.header_hash, None)
+            self.block_cache.remove(block.header_hash)
         cursor_1 = await self.db.execute(
             "INSERT OR REPLACE INTO full_blocks VALUES(?, ?, ?, ?, ?)",
             (
@@ -114,14 +116,22 @@ class BlockStore:
         self,
         ses_block_hash: bytes32,
     ) -> Optional[List[SubEpochChallengeSegment]]:
+        cached = self.ses_challenge_cache.get(ses_block_hash)
+        if cached is not None:
+            return cached
         cursor = await self.db.execute(
             "SELECT challenge_segments from sub_epoch_segments_v3 WHERE ses_block_hash=?", (ses_block_hash.hex(),)
         )
         row = await cursor.fetchone()
         await cursor.close()
         if row is not None:
-            return SubEpochSegments.from_bytes(row[0]).challenge_segments
+            challenge_segments = SubEpochSegments.from_bytes(row[0]).challenge_segments
+            self.ses_challenge_cache.put(ses_block_hash, challenge_segments)
+            return challenge_segments
         return None
+
+    def cache_block(self, block: FullBlock):
+        self.block_cache.put(block.header_hash, block)
 
     async def get_full_block(self, header_hash: bytes32) -> Optional[FullBlock]:
         cached = self.block_cache.get(header_hash)
@@ -134,6 +144,17 @@ class BlockStore:
             block = FullBlock.from_bytes(row[0])
             self.block_cache.put(block.header_hash, block)
             return block
+        return None
+
+    async def get_full_block_bytes(self, header_hash: bytes32) -> Optional[bytes]:
+        cached = self.block_cache.get(header_hash)
+        if cached is not None:
+            return cached
+        cursor = await self.db.execute("SELECT block from full_blocks WHERE header_hash=?", (header_hash.hex(),))
+        row = await cursor.fetchone()
+        await cursor.close()
+        if row is not None:
+            return row[0]
         return None
 
     async def get_full_blocks_at(self, heights: List[uint32]) -> List[FullBlock]:
@@ -189,6 +210,7 @@ class BlockStore:
         for row in rows:
             full_block: FullBlock = FullBlock.from_bytes(row[0])
             all_blocks[full_block.header_hash] = full_block
+            self.block_cache.put(full_block.header_hash, full_block)
         ret: List[FullBlock] = []
         for hh in header_hashes:
             if hh not in all_blocks:

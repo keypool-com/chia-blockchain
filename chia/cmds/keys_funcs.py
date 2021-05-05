@@ -69,27 +69,30 @@ def show_all_keys(show_mnemonic: bool):
     if len(private_keys) == 0:
         print("There are no saved private keys")
         return
-    print("Showing all private keys:")
+    msg = "Showing all public keys derived from your private keys:"
+    if show_mnemonic:
+        msg = "Showing all public and private keys"
+    print(msg)
     for sk, seed in private_keys:
         print("")
         print("Fingerprint:", sk.get_g1().get_fingerprint())
         print("Master public key (m):", sk.get_g1())
-        print("Master private key (m):", bytes(sk).hex())
         print(
             "Farmer public key (m/12381/8444/0/0):",
             master_sk_to_farmer_sk(sk).get_g1(),
         )
         print("Pool public key (m/12381/8444/1/0):", master_sk_to_pool_sk(sk).get_g1())
         print(
-            "First wallet key (m/12381/8444/2/0):",
-            master_sk_to_wallet_sk(sk, uint32(0)).get_g1(),
-        )
-        print(
             "First wallet address:",
             encode_puzzle_hash(create_puzzlehash_for_pk(master_sk_to_wallet_sk(sk, uint32(0)).get_g1()), prefix),
         )
         assert seed is not None
         if show_mnemonic:
+            print("Master private key (m):", bytes(sk).hex())
+            print(
+                "First wallet secret key (m/12381/8444/2/0):",
+                master_sk_to_wallet_sk(sk, uint32(0)).get_g1(),
+            )
             mnemonic = bytes_to_mnemonic(seed)
             print("  Mnemonic seed (24 secret words):")
             print(mnemonic)

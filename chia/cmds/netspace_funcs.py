@@ -60,13 +60,18 @@ async def netstorge_async(rpc_port: int, delta_block_height: str, start: str) ->
                 f"Header Hash:      0x{newer_block_header.header_hash}\n"
             )
             network_space_terabytes_estimate = network_space_bytes_estimate / 1024 ** 4
-            if network_space_terabytes_estimate > 1024:
-                print(f"The network has an estimated {network_space_terabytes_estimate / 1024:.3f} PiB")
+            if network_space_terabytes_estimate >= 1024:
+                network_space_terabytes_estimate = network_space_terabytes_estimate / 1024
+                if network_space_terabytes_estimate >= 1024:
+                    network_space_terabytes_estimate = network_space_terabytes_estimate / 1024
+                    print(f"The network has an estimated {network_space_terabytes_estimate:.3f} EiB")
+                else:
+                    print(f"The network has an estimated {network_space_terabytes_estimate:.3f} PiB")
             else:
                 print(f"The network has an estimated {network_space_terabytes_estimate:.3f} TiB")
 
     except Exception as e:
-        if isinstance(e, aiohttp.client_exceptions.ClientConnectorError):
+        if isinstance(e, aiohttp.ClientConnectorError):
             print(f"Connection error. Check if full node rpc is running at {rpc_port}")
         else:
             print(f"Exception {e}")
